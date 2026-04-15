@@ -37,3 +37,6 @@ build/
 *.swp
 *.swo
 *~
+
+# Vercel (lien projet local)
+.vercel

@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "API REST for managing favorite movies",
   "main": "index.js",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
@@ -22,4 +25,4 @@
   "devDependencies": {
     "nodemon": "^3.0.1"
   }
-} 
+}

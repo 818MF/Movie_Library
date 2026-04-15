@@ -50,3 +50,13 @@ Ouvrir **http://127.0.0.1:3002/** (ou le `PORT` défini). Santé : **GET /health
 | DELETE | `/api/movies/:id` | Bearer |
 
 Tests rapides : fichier **`api.rest`** (extension REST Client).
+
+## Déploiement sur Vercel
+
+1. Créez un projet sur [Vercel](https://vercel.com) pointant vers ce dépôt Git.
+2. **MongoDB** : utilisez une base accessible depuis Internet ([MongoDB Atlas](https://www.mongodb.com/atlas)) — pas `localhost`. Définissez `MONGODB_URI` dans **Settings → Environment Variables**.
+3. Renseignez aussi `JWT_SECRET`, `TMDB_API_KEY`, et laissez **`ENABLE_RABBITMQ=false`** (RabbitMQ n’est pas adapté au serverless par défaut).
+4. `PORT` / `HOST` sont gérés par Vercel — inutiles en production.
+5. Fichiers utiles : **`app.js`** (application Express), **`api/index.js`** (handler serverless), **`vercel.json`** (réécriture des routes vers ce handler).
+
+Après déploiement, l’URL Vercel sert l’UI (`/`), l’API (`/api/...`) et `/health`.

@@ -23,6 +23,14 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
+userSchema.set('toJSON', {
+  transform(doc, ret) {
+    delete ret.password;
+    delete ret.tokens;
+    return ret;
+  }
+});
+
 // Hash password before saving
 userSchema.pre('save', async function(next) {
   if (this.isModified('password')) {
@@ -53,4 +61,4 @@ userSchema.methods.removeToken = async function(token) {
 
 const User = mongoose.model('User', userSchema);
 
-module.exports = User; 
+module.exports = User;

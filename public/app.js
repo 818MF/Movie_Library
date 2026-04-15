@@ -2,40 +2,12 @@
 let currentUser = null;
 let currentPage = 'auth';
 
-// API endpoints
-const API_BASE_URL = 'http://localhost:3000/api';
+// API — même origine que la page (fonctionne quel que soit le port)
+const API_BASE_URL = '/api';
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 
-// Event Listeners
-document.addEventListener('DOMContentLoaded', () => {
-    // Login form submission
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = loginForm.querySelector('[name="email"]').value;
-        const password = loginForm.querySelector('[name="password"]').value;
-        await login(email, password);
-        loginForm.reset();
-    });
-
-    // Register form submission
-    registerForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = registerForm.querySelector('[name="email"]').value;
-        const password = registerForm.querySelector('[name="password"]').value;
-        const confirmPassword = registerForm.querySelector('[name="confirmPassword"]').value;
-        
-        if (password !== confirmPassword) {
-            alert('Passwords do not match!');
-            return;
-        }
-        
-        await register(email, password);
-        registerForm.reset();
-    });
-
-    // Logout button
-    document.getElementById('logoutBtn').addEventListener('click', logout);
-});
+let searchResultsCache = [];
+let favoritesResultsCache = [];
 
 // DOM Elements
 const authPage = document.getElementById('authPage');
@@ -57,6 +29,22 @@ const movieRating = document.getElementById('movieRating');
 const movieNotes = document.getElementById('movieNotes');
 const saveToFavorites = document.getElementById('saveToFavorites');
 
+function apiErrorMessage(data) {
+    if (data && data.message) return data.message;
+    if (data && Array.isArray(data.errors)) {
+        return data.errors.map((e) => e.msg || e.message || String(e)).join(' ');
+    }
+    return 'Request failed';
+}
+
+function authHeaders(jsonBody) {
+    const token = localStorage.getItem('token');
+    const h = {};
+    if (token) h.Authorization = `Bearer ${token}`;
+    if (jsonBody) h['Content-Type'] = 'application/json';
+    return h;
+}
+
 // Authentication functions
 async function login(email, password) {
     try {
@@ -71,7 +59,7 @@ async function login(email, password) {
             localStorage.setItem('token', data.token);
             showPage('search');
         } else {
-            alert(data.message || 'Login failed');
+            alert(apiErrorMessage(data));
         }
     } catch (error) {
         alert('Error during login');
@@ -87,10 +75,11 @@ async function register(email, password) {
         });
         const data = await response.json();
         if (response.ok) {
-            alert('Registration successful! Please login.');
-            showAuthForm('login');
+            currentUser = data;
+            localStorage.setItem('token', data.token);
+            showPage('search');
         } else {
-            alert(data.message || 'Registration failed');
+            alert(apiErrorMessage(data));
         }
     } catch (error) {
         alert('Error during registration');
@@ -107,10 +96,14 @@ function logout() {
 async function searchMovies(query) {
     try {
         const response = await fetch(`${API_BASE_URL}/movies/search?query=${encodeURIComponent(query)}`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            headers: authHeaders()
         });
-        const movies = await response.json();
-        displaySearchResults(movies);
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            alert(apiErrorMessage(data));
+            return;
+        }
+        displaySearchResults(Array.isArray(data) ? data : []);
     } catch (error) {
         alert('Error searching movies');
     }
@@ -119,31 +112,43 @@ async function searchMovies(query) {
 async function getFavorites() {
     try {
         const response = await fetch(`${API_BASE_URL}/movies`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            headers: authHeaders()
         });
-        const favorites = await response.json();
-        displayFavorites(favorites);
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            alert(apiErrorMessage(data));
+            return;
+        }
+        displayFavorites(Array.isArray(data) ? data : []);
     } catch (error) {
         alert('Error fetching favorites');
     }
 }
 
 async function addToFavorites(movieData) {
+    const tmdbId = movieData.tmdbId != null ? Number(movieData.tmdbId) : NaN;
+    const payload = {
+        tmdbId: Number.isFinite(tmdbId) ? tmdbId : null,
+        personalNote: movieData.personalNote || '',
+        rating: movieData.rating != null ? Number(movieData.rating) : 0
+    };
+    if (payload.tmdbId == null || payload.tmdbId < 1) {
+        alert('Identifiant TMDB invalide. Rouvrez le film depuis la recherche.');
+        return;
+    }
     try {
         const response = await fetch(`${API_BASE_URL}/movies`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify(movieData)
+            headers: authHeaders(true),
+            body: JSON.stringify(payload)
         });
+        const data = await response.json().catch(() => ({}));
         if (response.ok) {
             alert('Movie added to favorites!');
             closeModal();
             if (currentPage === 'favorites') getFavorites();
         } else {
-            alert('Failed to add movie to favorites');
+            alert(apiErrorMessage(data));
         }
     } catch (error) {
         alert('Error adding to favorites');
@@ -154,18 +159,16 @@ async function updateFavorite(movieId, updates) {
     try {
         const response = await fetch(`${API_BASE_URL}/movies/${movieId}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
+            headers: authHeaders(true),
             body: JSON.stringify(updates)
         });
+        const data = await response.json().catch(() => ({}));
         if (response.ok) {
             alert('Movie updated successfully!');
             closeModal();
             getFavorites();
         } else {
-            alert('Failed to update movie');
+            alert(apiErrorMessage(data));
         }
     } catch (error) {
         alert('Error updating movie');
@@ -178,12 +181,13 @@ async function removeFavorite(movieId) {
     try {
         const response = await fetch(`${API_BASE_URL}/movies/${movieId}`, {
             method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            headers: authHeaders()
         });
+        const data = await response.json().catch(() => ({}));
         if (response.ok) {
             getFavorites();
         } else {
-            alert('Failed to remove movie from favorites');
+            alert(apiErrorMessage(data));
         }
     } catch (error) {
         alert('Error removing from favorites');
@@ -194,10 +198,14 @@ async function removeFavorite(movieId) {
 async function getPopularMovies() {
     try {
         const response = await fetch(`${API_BASE_URL}/movies/search?query=popular`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            headers: authHeaders()
         });
-        const movies = await response.json();
-        displaySearchResults(movies);
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            alert(apiErrorMessage(data));
+            return;
+        }
+        displaySearchResults(Array.isArray(data) ? data : []);
     } catch (error) {
         alert('Error fetching popular movies');
     }
@@ -241,52 +249,62 @@ function showAuthForm(formName) {
 }
 
 function displaySearchResults(movies) {
-    searchResults.innerHTML = movies.map(movie => `
-        <div class="movie-card" onclick="showMovieDetails(${JSON.stringify(movie).replace(/"/g, "'")})">
-            <img src="${movie.poster_path ? TMDB_IMAGE_BASE_URL + movie.poster_path : 'placeholder.jpg'}" alt="${movie.title}">
+    searchResultsCache = movies;
+    searchResults.innerHTML = movies.map((movie, index) => {
+        const year = movie.release_date ? new Date(movie.release_date).getFullYear() : '—';
+        const safeTitle = String(movie.title || '').replace(/</g, '&lt;');
+        return `
+        <div class="movie-card" data-movie-index="${index}" role="button" tabindex="0">
+            <img src="${movie.poster_path ? TMDB_IMAGE_BASE_URL + movie.poster_path : '/public/placeholder.jpg'}" alt="${safeTitle}">
             <div class="movie-card-info">
-                <h3 class="movie-card-title">${movie.title}</h3>
-                <p class="movie-card-year">${new Date(movie.release_date).getFullYear()}</p>
+                <h3 class="movie-card-title">${safeTitle}</h3>
+                <p class="movie-card-year">${year}</p>
             </div>
-        </div>
-    `).join('');
+        </div>`;
+    }).join('');
 }
 
 function displayFavorites(favorites) {
-    favoritesList.innerHTML = favorites.map(movie => `
-        <div class="movie-card">
-            <div onclick="showMovieDetails(${JSON.stringify(movie).replace(/"/g, "'")}, true)">
-                <img src="${movie.posterPath ? TMDB_IMAGE_BASE_URL + movie.posterPath : 'placeholder.jpg'}" alt="${movie.title}">
+    favoritesResultsCache = favorites;
+    favoritesList.innerHTML = favorites.map((movie, index) => {
+        const safeTitle = String(movie.title || '').replace(/</g, '&lt;');
+        const id = String(movie._id || '');
+        return `
+        <div class="movie-card" data-fav-index="${index}">
+            <div class="movie-card-body">
+                <img src="${movie.posterPath ? TMDB_IMAGE_BASE_URL + movie.posterPath : '/public/placeholder.jpg'}" alt="${safeTitle}">
                 <div class="movie-card-info">
-                    <h3 class="movie-card-title">${movie.title}</h3>
-                    <p class="movie-card-year">${movie.releaseYear}</p>
+                    <h3 class="movie-card-title">${safeTitle}</h3>
+                    <p class="movie-card-year">${movie.releaseYear ?? '—'}</p>
                     <p>Rating: ${movie.rating || 'Not rated'}</p>
                     <p>Notes: ${movie.personalNote || 'No notes'}</p>
                 </div>
             </div>
-            <button class="delete-btn" onclick="event.stopPropagation(); removeFavorite('${movie._id}')">Delete</button>
-        </div>
-    `).join('');
+            <button type="button" class="delete-btn" data-movie-id="${id}">Delete</button>
+        </div>`;
+    }).join('');
 }
 
 function showMovieDetails(movie, isFavorite = false) {
-    modalPoster.src = movie.poster_path ? 
-        TMDB_IMAGE_BASE_URL + movie.poster_path : 
-        (movie.posterPath ? TMDB_IMAGE_BASE_URL + movie.posterPath : 'placeholder.jpg');
+    modalPoster.src = movie.poster_path ?
+        TMDB_IMAGE_BASE_URL + movie.poster_path :
+        (movie.posterPath ? TMDB_IMAGE_BASE_URL + movie.posterPath : '/public/placeholder.jpg');
     modalTitle.textContent = movie.title;
-    modalYear.textContent = movie.releaseYear || new Date(movie.release_date).getFullYear();
-    modalDescription.textContent = movie.description || movie.overview;
-    movieRating.value = movie.rating || '5';
+    const y = movie.releaseYear != null ? movie.releaseYear : (movie.release_date ? new Date(movie.release_date).getFullYear() : '—');
+    modalYear.textContent = y;
+    modalDescription.textContent = movie.description || movie.overview || '';
+    movieRating.value = String(movie.rating != null && movie.rating !== '' ? movie.rating : '5');
     movieNotes.value = movie.personalNote || '';
-    
+
     saveToFavorites.onclick = () => {
+        const rawId = movie.tmdbId != null ? movie.tmdbId : movie.id;
         const movieData = {
-            tmdbId: movie.tmdbId || movie.id,
+            tmdbId: rawId != null ? Number(rawId) : NaN,
             title: movie.title,
             posterPath: movie.poster_path || movie.posterPath,
             description: movie.overview || movie.description,
-            releaseYear: movie.releaseYear || new Date(movie.release_date).getFullYear(),
-            rating: parseInt(movieRating.value),
+            releaseYear: movie.releaseYear != null ? movie.releaseYear : (movie.release_date ? new Date(movie.release_date).getFullYear() : null),
+            rating: parseInt(movieRating.value, 10),
             personalNote: movieNotes.value
         };
         
@@ -363,5 +381,34 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('.close-modal').addEventListener('click', closeModal);
     window.addEventListener('click', (e) => {
         if (e.target === movieModal) closeModal();
+    });
+
+    // Cartes films — évite onclick + JSON.stringify (cassait les titres avec guillemets / id TMDB)
+    searchResults.addEventListener('click', (e) => {
+        const card = e.target.closest('.movie-card');
+        if (!card || card.dataset.movieIndex === undefined) return;
+        const movie = searchResultsCache[parseInt(card.dataset.movieIndex, 10)];
+        if (movie) showMovieDetails(movie, false);
+    });
+    searchResults.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const card = e.target.closest('.movie-card');
+        if (!card || card.dataset.movieIndex === undefined) return;
+        e.preventDefault();
+        const movie = searchResultsCache[parseInt(card.dataset.movieIndex, 10)];
+        if (movie) showMovieDetails(movie, false);
+    });
+
+    favoritesList.addEventListener('click', (e) => {
+        const del = e.target.closest('.delete-btn');
+        if (del && del.dataset.movieId) {
+            e.stopPropagation();
+            removeFavorite(del.dataset.movieId);
+            return;
+        }
+        const card = e.target.closest('.movie-card');
+        if (!card || card.dataset.favIndex === undefined) return;
+        const movie = favoritesResultsCache[parseInt(card.dataset.favIndex, 10)];
+        if (movie) showMovieDetails(movie, true);
     });
 });

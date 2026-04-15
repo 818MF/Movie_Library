@@ -26,12 +26,13 @@ const tmdbService = {
         }
       });
       
+      const rd = response.data.release_date;
       return {
         tmdbId: response.data.id,
         title: response.data.title,
         posterPath: response.data.poster_path,
         description: response.data.overview,
-        releaseYear: new Date(response.data.release_date).getFullYear()
+        releaseYear: rd ? new Date(rd).getFullYear() : null
       };
     } catch (error) {
       throw new Error('Failed to get movie details from TMDB');
@@ -39,4 +40,4 @@ const tmdbService = {
   }
 };
 
-module.exports = tmdbService; 
+module.exports = tmdbService;

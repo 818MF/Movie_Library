@@ -1,5 +1,9 @@
-@baseUrl = http://localhost:3000/api
+@rootUrl = http://localhost:3002
+@baseUrl = http://localhost:3002/api
 @authToken = your_auth_token_here
+
+### Health (JSON — vérifie que le serveur répond)
+GET {{rootUrl}}/health
 
 ### Register a new user
 POST {{baseUrl}}/auth/register

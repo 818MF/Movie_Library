@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Secrets & environnement local (ne jamais versionner)
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE / éditeurs (optionnel — décommentez si besoin)
+# .vscode/
+# .idea/
+
+# Tests / couverture (si vous en ajoutez)
+coverage/
+.nyc_output/
+
+# Build / cache
+.cache/
+dist/
+build/
+*.tsbuildinfo
+
+# Divers
+*.swp
+*.swo
+*~

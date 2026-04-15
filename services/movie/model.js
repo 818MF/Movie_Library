@@ -36,4 +36,4 @@ movieSchema.index({ user: 1, tmdbId: 1 }, { unique: true });
 
 const Movie = mongoose.model('Movie', movieSchema);
 
-module.exports = Movie; 
+module.exports = Movie;

@@ -255,7 +255,7 @@ function displaySearchResults(movies) {
         const safeTitle = String(movie.title || '').replace(/</g, '&lt;');
         return `
         <div class="movie-card" data-movie-index="${index}" role="button" tabindex="0">
-            <img src="${movie.poster_path ? TMDB_IMAGE_BASE_URL + movie.poster_path : '/public/placeholder.jpg'}" alt="${safeTitle}">
+            <img src="${movie.poster_path ? TMDB_IMAGE_BASE_URL + movie.poster_path : '/placeholder.jpg'}" alt="${safeTitle}">
             <div class="movie-card-info">
                 <h3 class="movie-card-title">${safeTitle}</h3>
                 <p class="movie-card-year">${year}</p>
@@ -272,7 +272,7 @@ function displayFavorites(favorites) {
         return `
         <div class="movie-card" data-fav-index="${index}">
             <div class="movie-card-body">
-                <img src="${movie.posterPath ? TMDB_IMAGE_BASE_URL + movie.posterPath : '/public/placeholder.jpg'}" alt="${safeTitle}">
+                <img src="${movie.posterPath ? TMDB_IMAGE_BASE_URL + movie.posterPath : '/placeholder.jpg'}" alt="${safeTitle}">
                 <div class="movie-card-info">
                     <h3 class="movie-card-title">${safeTitle}</h3>
                     <p class="movie-card-year">${movie.releaseYear ?? '—'}</p>
@@ -288,7 +288,7 @@ function displayFavorites(favorites) {
 function showMovieDetails(movie, isFavorite = false) {
     modalPoster.src = movie.poster_path ?
         TMDB_IMAGE_BASE_URL + movie.poster_path :
-        (movie.posterPath ? TMDB_IMAGE_BASE_URL + movie.posterPath : '/public/placeholder.jpg');
+        (movie.posterPath ? TMDB_IMAGE_BASE_URL + movie.posterPath : '/placeholder.jpg');
     modalTitle.textContent = movie.title;
     const y = movie.releaseYear != null ? movie.releaseYear : (movie.release_date ? new Date(movie.release_date).getFullYear() : '—');
     modalYear.textContent = y;

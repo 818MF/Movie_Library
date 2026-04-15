@@ -9,7 +9,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use('/public', express.static(path.join(__dirname, 'public')));
+// Racine : /styles.css, /app.js (OK en local et sur Vercel où `public/` est servi à /)
+const publicDir = path.join(__dirname, 'public');
+app.use(express.static(publicDir));
+// Compat anciens liens /public/...
+app.use('/public', express.static(publicDir));
 
 app.get('/health', (req, res) => {
   res.status(200).json({

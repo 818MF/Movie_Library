@@ -60,3 +60,5 @@ Tests rapides : fichier **`api.rest`** (extension REST Client).
 5. Fichiers utiles : **`app.js`** (application Express), **`api/index.js`** (handler serverless), **`vercel.json`** (réécriture des routes vers ce handler).
 
 Après déploiement, l’URL Vercel sert l’UI (`/`), l’API (`/api/...`) et `/health`.
+
+Les assets statiques (`styles.css`, `app.js`, images) sont référencés depuis la racine (`/styles.css`, `/app.js`) pour être compatibles avec le dossier `public/` sur Vercel.

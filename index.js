@@ -2,6 +2,7 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const app = require('./app');
 const { connectRabbitMQ } = require('./config/rabbitmq');
+const { getMongoUri } = require('./config/mongoUri');
 
 const ENABLE_MONGODB = process.env.ENABLE_MONGODB !== 'false';
 const ENABLE_RABBITMQ = process.env.ENABLE_RABBITMQ === 'true';
@@ -10,12 +11,16 @@ const HOST = process.env.HOST || '0.0.0.0';
 
 async function start() {
   if (ENABLE_MONGODB) {
+    const uri = getMongoUri();
+    if (!uri) {
+      console.error('MongoDB: définissez MONGODB_URI ou MONGO_URI dans .env');
+      process.exit(1);
+    }
     try {
-      await mongoose.connect(process.env.MONGODB_URI);
+      await mongoose.connect(uri);
       console.log('Connected to MongoDB');
     } catch (err) {
       console.error('MongoDB connection error:', err.message);
-      console.error('Vérifiez que le service MongoDB tourne (port 27017).');
       process.exit(1);
     }
   } else {

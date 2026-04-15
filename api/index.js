@@ -4,13 +4,14 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const app = require('../app');
+const { getMongoUri } = require('../config/mongoUri');
 
 async function connectMongoIfNeeded() {
   if (process.env.ENABLE_MONGODB === 'false') return;
   if (mongoose.connection.readyState >= 1) return;
-  const uri = process.env.MONGODB_URI;
+  const uri = getMongoUri();
   if (!uri) {
-    throw new Error('MONGODB_URI is required when ENABLE_MONGODB is not false');
+    throw new Error('MONGODB_URI or MONGO_URI is required when ENABLE_MONGODB is not false');
   }
   await mongoose.connect(uri);
 }

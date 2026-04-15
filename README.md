@@ -29,7 +29,7 @@ Ouvrir **http://127.0.0.1:3002/** (ou le `PORT` défini). Santé : **GET /health
 |----------|---------|------|
 | `PORT` | `3002` | Port HTTP |
 | `HOST` | `0.0.0.0` | Écoute réseau |
-| `MONGODB_URI` | `mongodb://127.0.0.1:27017/favorite-movies` | Base |
+| `MONGODB_URI` | `mongodb://…` ou `mongodb+srv://…` (Atlas) | Base ; alias accepté : `MONGO_URI` |
 | `ENABLE_MONGODB` | `true` | Désactiver : `false` |
 | `JWT_SECRET` | chaîne longue aléatoire | Signature JWT |
 | `TMDB_API_KEY` | *votre clé* | TMDB |

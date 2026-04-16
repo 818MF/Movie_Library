@@ -47,7 +47,7 @@ Créez un fichier **`.env`** à la racine (voir section suivante). Ce fichier ne
 | Variable | Description |
 |----------|-------------|
 | `MONGODB_URI` | Chaîne de connexion MongoDB (`mongodb://…` en local ou `mongodb+srv://…` sur Atlas). **Alias accepté :** `MONGO_URI` si `MONGODB_URI` est absent. |
-| `JWT_SECRET` | Secret long et aléatoire pour signer les JWT. |
+| `JWT_SECRET` | Secret long et aléatoire pour signer les JWT (tokens valides **7 jours**). **Indispensable sur Vercel** : sans cette variable, l’API renvoie une erreur à l’inscription / connexion. |
 | `TMDB_API_KEY` | Clé API The Movie Database. |
 
 ### Optionnel / développement

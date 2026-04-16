@@ -47,7 +47,13 @@ userSchema.methods.comparePassword = async function(password) {
 // Method to generate auth token
 userSchema.methods.generateAuthToken = async function() {
   const jwt = require('jsonwebtoken');
-  const token = jwt.sign({ _id: this._id.toString() }, process.env.JWT_SECRET);
+  const { getJwtSecret } = require('../../config/jwtSecret');
+  const subject = this._id.toString();
+  const token = jwt.sign(
+    { id: subject, _id: subject },
+    getJwtSecret(),
+    { expiresIn: '7d' }
+  );
   this.tokens = this.tokens.concat({ token });
   await this.save();
   return token;

@@ -14,6 +14,7 @@ const authPage = document.getElementById('authPage');
 const searchPage = document.getElementById('searchPage');
 const favoritesPage = document.getElementById('favoritesPage');
 const navLinks = document.getElementById('navLinks');
+const navToggle = document.getElementById('navToggle');
 const loginForm = document.getElementById('loginForm');
 const registerForm = document.getElementById('registerForm');
 const searchInput = document.getElementById('searchInput');
@@ -216,13 +217,16 @@ function showPage(pageName) {
     [authPage, searchPage, favoritesPage].forEach(page => {
         page.classList.add('hidden');
     });
+    closeMobileNav();
 
     if (pageName === 'auth') {
         authPage.classList.remove('hidden');
         navLinks.classList.add('hidden');
+        navToggle.classList.add('hidden');
     } else {
         document.getElementById(`${pageName}Page`).classList.remove('hidden');
         navLinks.classList.remove('hidden');
+        navToggle.classList.remove('hidden');
         document.querySelectorAll('.nav-link').forEach(link => {
             link.classList.toggle('active', link.dataset.page === pageName);
         });
@@ -233,6 +237,15 @@ function showPage(pageName) {
             getPopularMovies();
         }
     }
+}
+
+function setMobileNavOpen(isOpen) {
+    navLinks.classList.toggle('nav-links-open', isOpen);
+    navToggle.setAttribute('aria-expanded', String(isOpen));
+}
+
+function closeMobileNav() {
+    setMobileNavOpen(false);
 }
 
 function showAuthForm(formName) {
@@ -356,11 +369,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Navigation
+    navToggle.addEventListener('click', () => {
+        const isOpen = navLinks.classList.contains('nav-links-open');
+        setMobileNavOpen(!isOpen);
+    });
+
     document.querySelectorAll('.nav-link').forEach(link => {
         if (link.id === 'logoutBtn') {
-            link.addEventListener('click', logout);
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                closeMobileNav();
+                logout();
+            });
         } else {
-            link.addEventListener('click', () => showPage(link.dataset.page));
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                closeMobileNav();
+                showPage(link.dataset.page);
+            });
         }
     });
 
